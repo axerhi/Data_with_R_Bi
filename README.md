@@ -5,5 +5,5 @@ Reference to origin of each data base inside each pdf
 
 # Projects and status
 
-- Accesibility-eu-2011: data about access to education and oportunities for people with disabilities from 2011 by eurostat
+- Accesibility-eu-2011: data about access to education and oportunities for people with disabilities from 2011 by eurostat (working on)
 
