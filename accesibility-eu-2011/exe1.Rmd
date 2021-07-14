@@ -1,0 +1,176 @@
+---
+title: "Analisis of access of education and training for persons with disability in Europe"
+author: "Bianca Isabel"
+date: "7/11/2021"
+output: pdf_document
+---
+
+Packages used:
+
+- dplyr
+- ggplot
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(Rmisc)
+library(dplyr)
+library(ggplot2)
+```
+
+## Data preparation and introduction
+
+-Original data from:  https://ec.europa.eu/eurostat/data/database 
+
+-Modified CSV from: https://www.kaggle.com/gpreda/access-to-education-of-disabled-people-in-europe
+
+The data presents the results of the evaluation for the accessibility to education and training for persons with disabilities in EU, reported in Eurostat, the evaluation is done with the next parameters:
+
+1. Units: all in thousands, not printed for cleanness
+2. ISCE97: International Standard Classification of Education 1997
+  * ED0-2: Pre-primary to low secondary education
+  * ED3-4: High secondary to Post secondary
+  * ED5-6: First and second part of tertiary education
+  * NRP: Not reported
+3. HLTH_PB: European disability level classification
+  * PB1040 - Difficulty in basic activities
+  * PB1041 - No difficulty in basic activities
+  * PB1070 - Limitation in work caused by a health condition or difficulty in a basic activity
+  * PB1071 - No limitation in work caused by a health condition or difficulty in basic activities
+  * TOTAL  - Sum of all the disability levels classification
+  * NRP - Not reported
+4. Sex
+  * M - Males
+  * F - Female
+  * T - Sum of M and F
+5. Age group
+  * 15-24
+  * 25-34
+  * 35-44
+  * 45-54
+  * 55-64
+  * Total - Sum of all age group 
+6. Time: year of evaluation, all in 2011
+7. Geo: two letter code of country
+8. Value: numerical value of examination done for accessibility of education and training for persons with disability in Europe
+
+Loading and cleaning of the data:
+
+```{r}
+# Data loading
+eu_ed=read.csv('education_disbled_eu.csv')
+
+# Cleaning of data
+eu_ed_nt = mutate_if( #make strings factors
+  subset(eu_ed, select = -c(unit,time), #take out units and year as is the same in all
+         eu_ed$sex!="T" & eu_ed$age!="TOTAL" & eu_ed$hlth_pb!="TOTAL" & eu_ed$isced97!="TOTAL"),#with out totals in data
+  is.character, as.factor) 
+
+eu_ed_ms = eu_ed_nt[c(which(complete.cases(eu_ed_nt)==FALSE)),] #table of missing reported examination values
+eu_ed_cm = na.omit(eu_ed_nt) #table of does with examination values
+```
+
+Let us first analyze the general data set to obtain an idea of the whole:
+
+```{r}
+## data summary
+summary.data.frame(eu_ed_nt)
+summary.data.frame(eu_ed_cm)
+summary.data.frame(eu_ed_ms)
+```
+
+```{r}
+## bars of does with scores (green) and with out score (red)
+ggplot(eu_ed_cm, aes(x=geo))+
+  geom_bar(colour="green", fill=NA, position="stack", size=1)+
+  geom_bar(data = eu_ed_ms, colour="red", fill=NA, position = "stack")+
+  labs(x="Country")+
+  ggtitle("Count of entries per country with and with out score")+
+  theme(legend.position = "none")+
+  theme_minimal()
+
+# comparing all of the data of education level with reported scholarship sex, and age group
+ggplot(eu_ed_nt, aes(sex,age, colour=age))+
+  geom_count() +
+  facet_grid(rows = vars(isced97), cols = vars(hlth_pb))+
+  ggtitle("Whole data set")
+
+# comparing cm data of education level with reported scholarship sex, and age group
+ggplot(eu_ed_cm, aes(sex,age, colour=age))+
+  geom_count() +
+  facet_grid(rows = vars(isced97), cols = vars(hlth_pb))+
+  ggtitle("With reported scores")
+  
+# comparing ms data of education level with reported scholarship sex, and age group
+ggplot(eu_ed_ms, aes(sex,age, colour=age))+
+  geom_count() +
+  facet_grid(rows = vars(isced97), cols = vars(hlth_pb))+
+  ggtitle("Scores not reported")
+```
+
+As we can see the only country with more missing scores is MT. The ones with more scores are UK and NL, with NL being the one with less missing scores. Analyzing the demographics the NRP education group is the one with less reported scores, follow by the ED5_6 group, in age the group from 15 to 24 is the one with more missing and in disability classification PB1041 and PB1071 seem to share the lowest number of missing reported values. In sex it seems that both are equally represented in the data set with all other reported groups
+
+## Anlyzing distribiutions
+
+First let us see the general distribution of the scores:
+
+```{r}
+## distribution with histogram
+p1=ggplot(eu_ed_cm, aes(value, fill="#3590e0"))+
+  geom_histogram(aes(y=..density..))+
+  geom_density()+
+  theme(legend.position = "none")
+
+## box plot
+p2=ggplot(eu_ed_cm, aes(value))+
+  geom_boxplot()
+
+multiplot(p1,p2, layout = matrix(c(1,2)) )
+
+```
+
+As we can see the values go to density close to 0 after 500, and the box plot shows a lot of outliers, lets see if they still there if broken down by category
+
+```{r}
+# Using eu_ed_cm to remove warning about removed rows
+
+# Value with respect to country
+p1=ggplot(eu_ed_cm, aes(value, geo, fill="red"))+
+  geom_boxplot()+
+  theme(legend.position = "")
+
+# Value with respect to sex
+p2=ggplot(eu_ed_cm, aes(value, sex, fill=sex))+
+  geom_boxplot()
+
+# Value with respect to age group
+p3=ggplot(eu_ed_cm, aes(value, age, fill=age))+
+  geom_boxplot()
+
+# Value with respect to disability classification
+p4=ggplot(eu_ed_cm, aes(value, hlth_pb, fill=hlth_pb))+
+  geom_boxplot()
+
+# Value with respect to education level
+p5=ggplot(eu_ed_cm, aes(value, isced97, fill=isced97))+
+  geom_boxplot()
+
+## desing
+p1
+multiplot(p2,p3)
+multiplot(p4,p5)
+
+```
+The outlines continue except in all the cases except in the country where they are less. We can analyze a linear model to see how our data behaves and to see if there are any outliers that we can take out using cooks distance as a parameter so to make a decision to go foward with the analyzis.
+
+```{r}
+model = lm(value ~ ., data = eu_ed_nt)
+
+par(mfrow = c(2,2))
+plot(model)
+
+ck=cooks.distance(model)
+infl=(ck>4*mean(ck, na.rm = T))
+eu_ed_nt_no=eu_ed_nt[-infl,]
+```
+
