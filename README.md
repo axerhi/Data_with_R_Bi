@@ -7,3 +7,8 @@ Reference to origin of each data base inside each pdf
 
 - Accesibility-eu-2011: data about access to education and oportunities for people with disabilities from 2011 by eurostat (working on)
 
+# Package
+
+Scripts R library used in the projects, either found, modified, or created. 
+
+Current version: 0.1v

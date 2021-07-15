@@ -81,6 +81,8 @@ summary.data.frame(eu_ed_ms)
 
 ```{r}
 ## bars of does with scores (green) and with out score (red)
+data.fra(eu_ed_cm$geo,eu_ed_ms$geo)
+
 ggplot(eu_ed_cm, aes(x=geo))+
   geom_bar(colour="green", fill=NA, position="stack", size=1)+
   geom_bar(data = eu_ed_ms, colour="red", fill=NA, position = "stack")+
@@ -106,6 +108,8 @@ ggplot(eu_ed_ms, aes(sex,age, colour=age))+
   geom_count() +
   facet_grid(rows = vars(isced97), cols = vars(hlth_pb))+
   ggtitle("Scores not reported")
+
+
 ```
 
 As we can see the only country with more missing scores is MT. The ones with more scores are UK and NL, with NL being the one with less missing scores. Analyzing the demographics the NRP education group is the one with less reported scores, follow by the ED5_6 group, in age the group from 15 to 24 is the one with more missing and in disability classification PB1041 and PB1071 seem to share the lowest number of missing reported values. In sex it seems that both are equally represented in the data set with all other reported groups
@@ -164,11 +168,12 @@ multiplot(p4,p5)
 The outlines continue except in all the cases except in the country where they are less. We can analyze a linear model to see how our data behaves and to see if there are any outliers that we can take out using cooks distance as a parameter so to make a decision to go foward with the analyzis.
 
 ```{r}
+# Linear model and analysis of value vs all other data
 model = lm(value ~ ., data = eu_ed_nt)
-
 par(mfrow = c(2,2))
 plot(model)
 
+# Cooks distance analysis 
 ck=cooks.distance(model)
 infl=(ck>4*mean(ck, na.rm = T))
 eu_ed_nt_no=eu_ed_nt[-infl,]
