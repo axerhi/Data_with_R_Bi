@@ -16,6 +16,7 @@ library(tidyverse)
 library(Rmisc)
 library(dplyr)
 library(ggplot2)
+library(rscp)
 ```
 
 ## Data preparation and introduction
@@ -73,23 +74,15 @@ eu_ed_cm = na.omit(eu_ed_nt) #table of does with examination values
 Let us first analyze the general data set to obtain an idea of the whole:
 
 ```{r}
-## data summary
-summary.data.frame(eu_ed_nt)
-summary.data.frame(eu_ed_cm)
-summary.data.frame(eu_ed_ms)
-```
-
-```{r}
 ## bars of does with scores (green) and with out score (red)
-data.fra(eu_ed_cm$geo,eu_ed_ms$geo)
+temp=do.call(rbind,Map(data.frame, geo=count(eu_ed_nt$geo)$x, cm=count(eu_ed_cm$geo)$freq, ms=count(eu_ed_ms$geo)$freq))
 
-ggplot(eu_ed_cm, aes(x=geo))+
-  geom_bar(colour="green", fill=NA, position="stack", size=1)+
-  geom_bar(data = eu_ed_ms, colour="red", fill=NA, position = "stack")+
-  labs(x="Country")+
-  ggtitle("Count of entries per country with and with out score")+
+ggplot(temp, aes(x=geo))+
+  geom_count(aes(y=cm, colour="red"))+
+  geom_count(aes(y=ms, colour="green"))+
   theme(legend.position = "none")+
-  theme_minimal()
+  ylab("count")+
+  xlab("country")
 
 # comparing all of the data of education level with reported scholarship sex, and age group
 ggplot(eu_ed_nt, aes(sex,age, colour=age))+
